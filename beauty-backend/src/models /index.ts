@@ -1,14 +1,23 @@
 import User from './User';
-// We will import Service, Product, Booking, and Wishlist here as we create them
+import Service from './Service';
+import Product from './Product';
+import Booking from './Booking';
+import Wishlist from './Wishlist';
 
 const setupAssociations = () => {
-  // Example: A User has many Bookings
-  // User.hasMany(Booking, { foreignKey: 'userId' });
-  // Booking.belongsTo(User, { foreignKey: 'userId' });
-  
-  // Example: A User has many Wishlist items
-  // User.hasMany(Wishlist, { foreignKey: 'userId' });
-  // Wishlist.belongsTo(User, { foreignKey: 'userId' });
+  // User <-> Booking <-> Service
+  User.hasMany(Booking, { foreignKey: 'userId' });
+  Booking.belongsTo(User, { foreignKey: 'userId' });
+
+  Service.hasMany(Booking, { foreignKey: 'serviceId' });
+  Booking.belongsTo(Service, { foreignKey: 'serviceId' });
+
+  // User <-> Wishlist <-> Product
+  User.hasMany(Wishlist, { foreignKey: 'userId' });
+  Wishlist.belongsTo(User, { foreignKey: 'userId' });
+
+  Product.hasMany(Wishlist, { foreignKey: 'productId' });
+  Wishlist.belongsTo(Product, { foreignKey: 'productId' });
 };
 
-export { sequelize as db, User, setupAssociations };
+export { User, Service, Product, Booking, Wishlist, setupAssociations };
