@@ -1,60 +1,40 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import { User } from '../models';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
+import { verifyAadharWithVendor } from '../services/aadharService';
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password, role, aadharNumber } = req.body;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+    // 1. Check for required Aadhar image upload [cite: 6]
+    if (!files || !files['aadharCard']) {
+      return res.status(400).json({ message: 'Aadhar Card image is required' });
     }
 
-    // Create user (hashing is handled by the Model hook we wrote)
-    const newUser = await User.create({ email, password, role });
+    // 2. Perform Aadhar Verification 
+    try {
+      await verifyAadharWithVendor(aadharNumber, files['aadharCard'][0]);
+    } catch (verificationError: any) {
+      // Return specific error message for frontend toast notifications 
+      return res.status(400).json({ message: verificationError.message });
+    }
+
+    // 3. Check for existing user
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Phone Number or Email already registered' });
+    }
+
+    // 4. Create User after successful verification
+    const newUser = await User.create({ email, password, role, aadharNumber });
 
     res.status(201).json({
-      message: 'User registered successfully',
-      user: { id: newUser.id, email: newUser.email, role: newUser.role }
+      success: true,
+      message: 'User registered and Aadhar verified successfully',
+      user: { id: newUser.id, email: newUser.email }
     });
   } catch (error) {
     res.status(500).json({ message: 'Registration failed', error });
-  }
-};
-
-export const login = async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body;
-
-    // Find user by email
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Check password using our instance method
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    // Generate JWT
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.json({
-      message: 'Login successful',
-      token,
-      user: { id: user.id, email: user.email, role: user.role }
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Login failed', error });
   }
 };
