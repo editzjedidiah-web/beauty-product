@@ -1,10 +1,13 @@
 import app from './app';
-import { db, setupAssociations } from './models';
-import dontenv from 'dontenv';
+import dotenv from 'dotenv';
+import { db } fro './models';
 
 dontenv.config();
-
 const PORT = process.env.PORT || 5000;
+
+db.sync().then(() => {
+  app.listen(PORT, () => console.log('Server running on port ${PORT}')); 
+});
 
 // Initialize Database and Start Server 
 const startServer = async () => {
