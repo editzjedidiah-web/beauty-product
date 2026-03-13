@@ -1,7 +1,7 @@
-import express, { Application } from 'express';
+import express, { Request, Responce, NextFunction } from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import path from 'path ';
+import path from 'path';
 import userRoutes from './routes/userRoutes';
 import serviceRoutes from './routes/serviceRoutes';
 import productRoutes from './routes/productRoutes';
@@ -19,8 +19,10 @@ app.use(express.urlencoded({ extended: true }));
 //For now, this stores files locally in 'uploads/'.
 // We can later update this to route S3.
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null. '${Date.now()}=$file.originalname}') 
+  destination: 'uploads/',
+  filename: (req, file, cb) => {
+    cb(null. '${Date.now()}=$file.originalname}')
+  }
 });
 export const upload = multer({ storage });
 
